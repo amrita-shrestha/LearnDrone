@@ -7,3 +7,4 @@ steps:
     commands:
       - npm install
       - npm test
+      - pwd
