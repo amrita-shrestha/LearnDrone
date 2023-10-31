@@ -1,9 +1,2 @@
-kind: pipeline
-name: default
-
-steps:
-  - name: test
-    image: node:9.8.0
-    commands:
-      - npm install
-      - npm test
+---
+{"kind": "pipeline", "type": "docker", "name": "ocis", "steps": [{"name": "clone-ocis", "image": "owncloudci/golang:1.20", "commands": ["git clone -b master --single-branch https://github.com/owncloud/ocis.git", "pwd"]}, {"name": "generate-ocis", "image": "owncloudci/nodejs:18", "commands": ["pwd", "cd ocis", "retry -t 3 'make ci-node-generate'"]}, {"name": "build-ocis", "image": "owncloudci/golang:1.20", "commands": ["pwd", "cd ocis/ocis", "retry -t 3 'make build'"]}, {"name": "ocis-server", "image": "owncloudci/golang:1.20", "detach": true, "environment": {"OCIS_URL": "https://ocis:9200", "OCIS_CONFIG_DIR": "/root/.ocis/config", "OCIS_LOG_LEVEL": "error", "IDM_ADMIN_PASSWORD": "admin", "PROXY_AUTOPROVISION_ACCOUNTS": true, "PROXY_ROLE_ASSIGNMENT_DRIVER": "oidc", "OCIS_OIDC_ISSUER": "https://${KEYCLOAK_DOMAIN:-keycloak.owncloud.test}/realms/${KEYCLOAK_REALM:-oCIS}", "PROXY_OIDC_REWRITE_WELLKNOWN": true, "WEB_OIDC_CLIENT_ID": "web", "PROXY_USER_OIDC_CLAIM": "preferred_username", "PROXY_USER_CS3_CLAIM": "username", "OCIS_ADMIN_USER_ID": "", "OCIS_EXCLUDE_RUN_SERVICES": "idp", "GRAPH_ASSIGN_DEFAULT_USER_ROLE": "false", "GRAPH_USERNAME_MATCH": "none"}, "commands": ["ocis/ocis/bin/ocis init --insecure true", "cat $OCIS_CONFIG_DIR/ocis.yaml"]}, {"name": "wait-for-ocis-server", "image": "owncloudci/wait-for:latest", "commands": ["wait-for -it ocis:9200 -t 300"]}]}
